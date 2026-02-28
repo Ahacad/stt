@@ -35,7 +35,7 @@ The daemon loads the model once and stays resident. Transcription requests come 
 ## Install
 
 ```bash
-git clone https://github.com/user/stt.git
+git clone https://github.com/Ahacad/stt.git
 cd stt
 uv tool install -e .
 ```
