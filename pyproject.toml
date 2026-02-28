@@ -1,0 +1,33 @@
+[project]
+name = "stt"
+version = "0.1.0"
+description = "Speech-to-text using faster-whisper + CUDA"
+readme = "README.md"
+license = "MIT"
+authors = [
+    { name = "ahacad", email = "ahacadev@gmail.com" }
+]
+requires-python = ">=3.11"
+dependencies = [
+    "faster-whisper>=1.0",
+    "sounddevice>=0.5",
+    "soundfile>=0.12",
+    "soxr>=1.0",
+    "numpy>=1.26,<2",
+]
+
+[project.scripts]
+stt = "stt.cli:main"
+stt-daemon = "stt.daemon:main"
+stt-record = "stt.audio:record_to_file_cli"
+stt-toggle = "stt.toggle:main"
+stt-transcribe = "stt.transcribe:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
