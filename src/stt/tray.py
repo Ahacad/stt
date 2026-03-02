@@ -37,7 +37,23 @@ def _read_config():
                 val = val.strip().strip('"').strip("'")
                 if key in config:
                     config[key] = val
+
+    # Validate hotkey — fall back to default if invalid
+    from stt.hotkey_dialog import validate_hotkey
+    if not validate_hotkey(config["hotkey"]):
+        log.warning("invalid hotkey %r in config, using default %s",
+                    config["hotkey"], DEFAULT_HOTKEY)
+        config["hotkey"] = DEFAULT_HOTKEY
+
     return config
+
+
+def _write_config(config):
+    """Write config dict back to config.toml."""
+    os.makedirs(os.path.dirname(CONFIG_PATH), exist_ok=True)
+    with open(CONFIG_PATH, "w") as f:
+        for key, val in config.items():
+            f.write(f'{key} = "{val}"\n')
 
 
 def _make_icon():
@@ -62,10 +78,10 @@ class STTApp:
         self.stop_event = threading.Event()
         self.record_thread = None
         self._current_wav = None
+        self.hotkey_listener = None
         self.config = _read_config()
 
     def start(self):
-        import pynput.keyboard
         import pystray
 
         notify("STT", "Loading model...")
@@ -73,20 +89,57 @@ class STTApp:
         self.model = load_model(self.config["model"], self.config["device"])
         notify("STT", f"Ready. Press {self.config['hotkey']} to dictate.")
 
-        hotkeys = pynput.keyboard.GlobalHotKeys(
-            {self.config["hotkey"]: self._on_toggle}
-        )
-        hotkeys.start()
+        self._bind_hotkey(self.config["hotkey"])
 
         menu = pystray.Menu(
             pystray.MenuItem("About", self._on_about),
-            pystray.MenuItem("Settings", self._on_settings),
+            pystray.MenuItem("Change Hotkey", self._on_change_hotkey),
+            pystray.MenuItem("Open Config", self._on_open_config),
             pystray.MenuItem("Quit", self._on_quit),
         )
 
         self.icon = pystray.Icon("STT", icon=_make_icon(), title="STT", menu=menu)
         log.info("tray app started")
         self.icon.run()
+
+    def _bind_hotkey(self, hotkey_str):
+        """Stop old hotkey listener and start a new one."""
+        import pynput.keyboard
+
+        if self.hotkey_listener:
+            self.hotkey_listener.stop()
+            self.hotkey_listener = None
+
+        self.hotkey_listener = pynput.keyboard.GlobalHotKeys(
+            {hotkey_str: self._on_toggle}
+        )
+        self.hotkey_listener.start()
+        log.info("hotkey bound: %s", hotkey_str)
+
+    def _on_hotkey_changed(self, new_hotkey):
+        """Callback from hotkey dialog."""
+        if new_hotkey is None:
+            # Cancelled — re-bind old hotkey
+            self._bind_hotkey(self.config["hotkey"])
+            log.info("hotkey change cancelled")
+            return
+
+        old = self.config["hotkey"]
+        self.config["hotkey"] = new_hotkey
+        _write_config(self.config)
+        self._bind_hotkey(new_hotkey)
+        notify("STT", f"Hotkey changed: {new_hotkey}")
+        log.info("hotkey changed from %s to %s", old, new_hotkey)
+
+    def _on_change_hotkey(self, icon, item):
+        from stt.hotkey_dialog import show_hotkey_dialog
+
+        # Stop current listener to prevent double-firing during capture
+        if self.hotkey_listener:
+            self.hotkey_listener.stop()
+            self.hotkey_listener = None
+
+        show_hotkey_dialog(self.config["hotkey"], self._on_hotkey_changed)
 
     def _on_toggle(self):
         if not self.recording:
@@ -151,11 +204,13 @@ class STTApp:
     def _on_about(self, icon, item):
         notify("STT", "Local speech-to-text. github.com/Ahacad/stt")
 
-    def _on_settings(self, icon, item):
+    def _on_open_config(self, icon, item):
         os.startfile(CONFIG_PATH)
 
     def _on_quit(self, icon, item):
         log.info("quit requested")
+        if self.hotkey_listener:
+            self.hotkey_listener.stop()
         self.icon.stop()
 
 
