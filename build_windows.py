@@ -131,10 +131,20 @@ def build():
         sys.exit(1)
 
     generate_icon()
+    if not os.path.exists("assets/icon.ico"):
+        print("ERROR: Icon generation failed — assets/icon.ico not found")
+        sys.exit(1)
 
     ct2_binaries = find_ctranslate2_libs()
     cuda_binaries = find_cuda_libs()
     all_binaries = ct2_binaries + cuda_binaries
+
+    print(f"  CTranslate2 libs: {len(ct2_binaries)}")
+    print(f"  CUDA DLLs: {len(cuda_binaries)}")
+    if not cuda_binaries:
+        print("  WARNING: No CUDA DLLs found under site-packages/nvidia/")
+        print("  Run: pip install nvidia-cublas-cu12 nvidia-cudnn-cu12")
+        print("  The exe will still build but may fail at runtime without CUDA.")
 
     # Build --add-binary args
     add_binary_args = []
@@ -175,8 +185,13 @@ def build():
     os.makedirs(dist_assets, exist_ok=True)
     shutil.copy("assets/icon.ico", dist_assets)
 
+    # Count DLLs in final output
+    dist_dir = os.path.join("dist", "stt")
+    dll_count = sum(1 for f in os.listdir(dist_dir) if f.endswith(".dll"))
+
     print()
-    print("Build complete: dist/stt/")
+    print(f"Build complete: {dist_dir}/")
+    print(f"  DLLs in output: {dll_count}")
     print("To create release zip:")
     print('  powershell Compress-Archive -Path dist/stt -DestinationPath dist/stt-windows.zip')
 

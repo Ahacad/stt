@@ -147,9 +147,18 @@ tail -f ~/.local/state/stt/stt.log
 - Press **Ctrl+Shift+S** again to stop — transcribed text is typed into the focused window
 - Right-click the tray icon for settings
 
+### Changing the hotkey
+
+Right-click tray > **Change Hotkey** opens a capture dialog:
+1. Click "Press to capture..."
+2. Hold your desired modifier(s) + key (e.g., Ctrl+Alt+R)
+3. Click OK — the new hotkey is active immediately, no restart needed
+
+The hotkey is saved to `%LOCALAPPDATA%\stt\config.toml`.
+
 ### Configuration
 
-Right-click tray > Settings opens the config file (`%LOCALAPPDATA%\stt\config.toml`):
+Right-click tray > **Open Config** opens the config file (`%LOCALAPPDATA%\stt\config.toml`):
 
 - `model` — Whisper model name (default: `large-v3`)
 - `device` — `cuda` or `cpu` (default: `cuda`)
@@ -171,15 +180,21 @@ A tray icon should appear. Press Ctrl+Shift+S to start/stop recording. First run
 Requires Python 3.11+ (python.org installer, not Microsoft Store), NVIDIA GPU with drivers. CUDA Toolkit is not required — pip packages bundle the runtime.
 
 ```powershell
-pip install -e .[windows] pyinstaller
-python build_windows.py
+.\build.ps1
 ```
 
-This produces `dist/stt/stt.exe`. To create a release zip:
+This creates a build venv, installs all dependencies, builds the exe, and produces `dist/stt-windows.zip`.
+
+<details>
+<summary>Manual build steps (if build.ps1 doesn't work)</summary>
 
 ```powershell
+pip install -e .[windows] pyinstaller nvidia-cublas-cu12 nvidia-cudnn-cu12
+python build_windows.py
 Compress-Archive -Path dist/stt -DestinationPath dist/stt-windows.zip
 ```
+
+</details>
 
 ### Troubleshooting
 
