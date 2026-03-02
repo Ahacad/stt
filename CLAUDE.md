@@ -148,9 +148,14 @@ When fixing bugs: write a test that reproduces the bug first, then fix it. The t
 - Never add a dep for something trivially implementable
 
 ### Commits
+- Auto-commit after completing each logical chunk of work. Don't wait for the user to ask
 - One logical change per commit
-- Message format: `verb + what + why` — "Add continuous VAD silence timeout config"
+- Conventional Commits format: `type(scope): description`
+  - Types: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`, `build`
+  - Scope is optional, use module name when relevant: `feat(audio): add stop_event for thread-based recording`
+  - Description is lowercase, imperative, no period
 - Test and implementation in the same commit
+- Run `pytest` before committing — never commit broken tests
 
 ### Code Review Checklist
 - [ ] Constants in config.py, not hardcoded
