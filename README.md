@@ -155,13 +155,22 @@ Right-click tray > Settings opens the config file (`%LOCALAPPDATA%\stt\config.to
 - `device` — `cuda` or `cpu` (default: `cuda`)
 - `hotkey` — key combination (default: `<ctrl>+<shift>+s`)
 
-### Building from source
-
-Requires Python 3.11+, NVIDIA GPU, and CUDA drivers on a Windows machine:
+### Testing from source (before building exe)
 
 ```powershell
 git clone https://github.com/Ahacad/stt.git
 cd stt
+pip install -e .[windows]
+python -m stt.tray
+```
+
+A tray icon should appear. Press Ctrl+Shift+S to start/stop recording. First run downloads the Whisper model (~3GB) to `%USERPROFILE%/.cache/huggingface/`.
+
+### Building the exe
+
+Requires Python 3.11+ (python.org installer, not Microsoft Store), NVIDIA GPU with drivers. CUDA Toolkit is not required — pip packages bundle the runtime.
+
+```powershell
 pip install -e .[windows] pyinstaller
 python build_windows.py
 ```
@@ -172,7 +181,15 @@ This produces `dist/stt/stt.exe`. To create a release zip:
 Compress-Archive -Path dist/stt -DestinationPath dist/stt-windows.zip
 ```
 
-The Whisper model (~3GB) is not bundled — it downloads automatically on first run.
+### Troubleshooting
+
+- **CTranslate2 / CUDA DLL errors** — run `pip install nvidia-cublas-cu12 nvidia-cudnn-cu12`, then rebuild
+- **Hotkey doesn't work in some apps** — run `stt.exe` as Administrator if the target window is elevated
+- **"Failed to execute script"** — run `dist\stt\stt.exe` from cmd to see the actual error
+- **Antivirus flags stt.exe** — PyInstaller exes are commonly false-flagged; add an exclusion for the `dist/stt/` folder
+- **Model download slow on first run** — the ~3GB model downloads from huggingface.co; check `%USERPROFILE%/.cache/huggingface/` if it seems stuck
+
+See `build_windows.py` header comments for more details.
 
 ## Project structure
 

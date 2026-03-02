@@ -1,11 +1,61 @@
 """Build stt.exe for Windows using PyInstaller.
 
-Run on a Windows machine with NVIDIA GPU:
+Prerequisites:
+    - Windows 10+ with NVIDIA GPU and up-to-date drivers
+    - Python 3.11+ (python.org installer, NOT Microsoft Store version)
+    - CUDA Toolkit is NOT required — pip packages bundle the CUDA runtime
+
+Setup:
     pip install -e .[windows] pyinstaller
+
+Build:
     python build_windows.py
 
-Produces dist/stt/ folder. Zip it for distribution:
+Output:
+    dist/stt/           standalone app folder
+    dist/stt/stt.exe    main executable
+
+Release:
     powershell Compress-Archive -Path dist/stt -DestinationPath dist/stt-windows.zip
+
+Testing before building the exe:
+    pip install -e .[windows]
+    python -m stt.tray
+    # Tray icon should appear. Try Ctrl+Shift+S to record/stop.
+    # First run downloads the Whisper model (~3GB) to %USERPROFILE%/.cache/huggingface/
+
+Common issues:
+    "Could not locate cudnn" / CTranslate2 DLL errors:
+        The CUDA DLLs from nvidia-* pip packages must be bundled. This script
+        auto-discovers them under site-packages/nvidia/. If it misses some,
+        check: pip list | findstr nvidia
+        You may need: pip install nvidia-cublas-cu12 nvidia-cudnn-cu12
+
+    "No module named '_sounddevice_data'":
+        Add --collect-data sounddevice to the pyinstaller command (already included).
+
+    pynput hotkey doesn't work / typing doesn't appear:
+        Some apps (admin-elevated windows, certain games) block synthetic input.
+        Run stt.exe as Administrator if the target window is elevated.
+        UAC prompts and password fields always block synthetic input — this is
+        a Windows security feature, not a bug.
+
+    "Failed to execute script" on double-click:
+        Run from cmd to see the actual error: cd dist\\stt && stt.exe
+        Most common cause is missing DLLs — check the CTranslate2 fix above.
+
+    Antivirus flags stt.exe:
+        PyInstaller executables are commonly false-flagged. Add an exclusion
+        for the dist/stt/ folder in Windows Defender or your AV.
+
+    Model download hangs on first run:
+        The model downloads from huggingface.co on first launch. This can take
+        a few minutes on slow connections. Check %USERPROFILE%/.cache/huggingface/
+        for partial downloads. Delete and retry if corrupted.
+
+    Toast notifications don't appear:
+        Windows Focus Assist / Do Not Disturb suppresses toasts. The app still
+        works — notifications are purely informational.
 """
 
 import os
