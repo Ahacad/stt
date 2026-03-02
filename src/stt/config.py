@@ -2,14 +2,19 @@
 
 import os
 
+from stt.compat import WINDOWS, data_dir, temp_dir
+
 # Paths
-SOCKET_PATH = os.path.expanduser("~/.local/state/stt.sock")
-PID_PATH = os.path.expanduser("~/.local/state/stt-daemon.pid")
-LOG_DIR = os.path.expanduser("~/.local/state/stt")
-LOG_PATH = os.path.join(LOG_DIR, "stt.log")
+_data = data_dir()
+os.makedirs(_data, exist_ok=True)
+
+SOCKET_PATH = os.path.join(_data, "stt.sock")
+PID_PATH = os.path.join(_data, "stt-daemon.pid")
+LOG_DIR = _data
+LOG_PATH = os.path.join(_data, "stt.log")
 
 # Audio
-DEFAULT_DEVICE = "pulse"
+DEFAULT_DEVICE = None if WINDOWS else "pulse"
 CHANNELS = 1
 WHISPER_RATE = 16000
 
@@ -19,13 +24,19 @@ SILENCE_DURATION = 1.5
 MIN_AUDIO_DURATION = 0.5
 
 # Toggle paths
-TOGGLE_LOCK = "/tmp/stt-recording.lock"
-TOGGLE_PIDFILE = "/tmp/stt-recording.pid"
-TOGGLE_WAVPATH = "/tmp/stt-recording-wavpath"
+_tmp = temp_dir()
+TOGGLE_LOCK = os.path.join(_tmp, "stt-recording.lock")
+TOGGLE_PIDFILE = os.path.join(_tmp, "stt-recording.pid")
+TOGGLE_WAVPATH = os.path.join(_tmp, "stt-recording-wavpath")
 
 # Sounds
-SND_START = "/usr/share/sounds/freedesktop/stereo/message-new-instant.oga"
-SND_STOP = "/usr/share/sounds/freedesktop/stereo/audio-volume-change.oga"
+SND_START = None if WINDOWS else "/usr/share/sounds/freedesktop/stereo/message-new-instant.oga"
+SND_STOP = None if WINDOWS else "/usr/share/sounds/freedesktop/stereo/audio-volume-change.oga"
 
 # Notification
 NOTIFY_ID = "9999"
+
+# Windows tray config
+CONFIG_PATH = os.path.join(_data, "config.toml")
+DEFAULT_HOTKEY = "<ctrl>+<shift>+s"
+DEFAULT_MODEL = "large-v3"

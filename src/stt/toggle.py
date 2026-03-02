@@ -18,7 +18,7 @@ from stt.config import (
     TOGGLE_WAVPATH,
 )
 from stt.log import setup_logging
-from stt.typing import notify, play_sound
+from stt.output import notify, play_sound
 
 log = setup_logging("stt.toggle")
 

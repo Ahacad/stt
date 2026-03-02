@@ -97,19 +97,20 @@ def record_until_stop(device_id):
     return raw, native_rate
 
 
-def record_to_file(outpath: str, device_id=DEFAULT_DEVICE):
-    """Record to WAV file until SIGTERM/SIGINT."""
+def record_to_file(outpath, device_id=DEFAULT_DEVICE, stop_event=None):
+    """Record to WAV file. Stops on SIGTERM/SIGINT (Linux) or stop_event.set() (Windows)."""
     dev_idx = resolve_device(device_id)
     native_rate = get_device_rate(device_id)
     audio_chunks = []
     stop = False
 
-    def on_signal(sig, frame):
-        nonlocal stop
-        stop = True
+    if stop_event is None:
+        def on_signal(sig, frame):
+            nonlocal stop
+            stop = True
 
-    signal.signal(signal.SIGTERM, on_signal)
-    signal.signal(signal.SIGINT, on_signal)
+        signal.signal(signal.SIGTERM, on_signal)
+        signal.signal(signal.SIGINT, on_signal)
 
     def callback(indata, frames, time_info, status):
         audio_chunks.append(indata.copy())
@@ -126,6 +127,8 @@ def record_to_file(outpath: str, device_id=DEFAULT_DEVICE):
 
     try:
         while not stop:
+            if stop_event and stop_event.is_set():
+                break
             sd.sleep(100)
     except KeyboardInterrupt:
         pass

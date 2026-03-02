@@ -16,12 +16,22 @@ dependencies = [
     "numpy>=1.26,<2",
 ]
 
+[project.optional-dependencies]
+windows = [
+    "pynput>=1.7",
+    "pystray>=0.19",
+    "Pillow>=10.0",
+]
+
 [project.scripts]
 stt = "stt.cli:main"
 stt-daemon = "stt.daemon:main"
 stt-record = "stt.audio:record_to_file_cli"
 stt-toggle = "stt.toggle:main"
 stt-transcribe = "stt.transcribe:main"
+
+[project.gui-scripts]
+stt-tray = "stt.tray:main"
 
 [dependency-groups]
 dev = [

@@ -5,7 +5,7 @@ import sys
 
 from stt.client import daemon_send
 from stt.log import setup_logging
-from stt.typing import notify, type_text
+from stt.output import notify, type_text
 
 log = setup_logging("stt.transcribe")
 

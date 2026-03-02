@@ -1,6 +1,6 @@
 # stt
 
-Local speech-to-text for Linux. Uses [faster-whisper](https://github.com/SYSTRAN/faster-whisper) with CUDA to transcribe speech in real time, entirely offline.
+Local speech-to-text for Linux and Windows. Uses [faster-whisper](https://github.com/SYSTRAN/faster-whisper) with CUDA to transcribe speech in real time, entirely offline.
 
 A daemon keeps the Whisper model loaded in VRAM. You talk, it transcribes — either printing to stdout or typing directly into the focused window via xdotool. Bind a hotkey and you get push-to-talk dictation anywhere on your desktop.
 
@@ -127,19 +127,69 @@ All components log to `~/.local/state/stt/stt.log` (DEBUG level). Stderr only ge
 tail -f ~/.local/state/stt/stt.log
 ```
 
+## Windows
+
+### Requirements
+
+- Windows 10 or later
+- NVIDIA GPU with up-to-date drivers
+
+### Install
+
+1. Download `stt-windows.zip` from [Releases](https://github.com/Ahacad/stt/releases)
+2. Extract to any folder
+3. Double-click `stt.exe`
+
+### Usage
+
+- A microphone icon appears in the system tray
+- Press **Ctrl+Shift+S** to start recording
+- Press **Ctrl+Shift+S** again to stop — transcribed text is typed into the focused window
+- Right-click the tray icon for settings
+
+### Configuration
+
+Right-click tray > Settings opens the config file (`%LOCALAPPDATA%\stt\config.toml`):
+
+- `model` — Whisper model name (default: `large-v3`)
+- `device` — `cuda` or `cpu` (default: `cuda`)
+- `hotkey` — key combination (default: `<ctrl>+<shift>+s`)
+
+### Building from source
+
+Requires Python 3.11+, NVIDIA GPU, and CUDA drivers on a Windows machine:
+
+```powershell
+git clone https://github.com/Ahacad/stt.git
+cd stt
+pip install -e .[windows] pyinstaller
+python build_windows.py
+```
+
+This produces `dist/stt/stt.exe`. To create a release zip:
+
+```powershell
+Compress-Archive -Path dist/stt -DestinationPath dist/stt-windows.zip
+```
+
+The Whisper model (~3GB) is not bundled — it downloads automatically on first run.
+
 ## Project structure
 
 ```
 src/stt/
+  compat.py      platform detection, path helpers
   config.py      shared constants and paths
+  core.py        model loading, transcription (shared by daemon + tray)
   log.py         logging setup
-  typing.py      xdotool, dunstify, paplay wrappers
-  client.py      socket client for talking to daemon
-  daemon.py      model loading, socket server, transcription
+  output.py      text input, notifications, sound (cross-platform)
+  client.py      socket client for talking to daemon (Linux)
+  daemon.py      socket server, transcription service (Linux)
   audio.py       device discovery, recording, VAD
-  cli.py         main stt CLI entry point
-  toggle.py      hotkey toggle (push-to-talk)
-  transcribe.py  transcribe WAV + type result
+  cli.py         main stt CLI entry point (Linux)
+  toggle.py      hotkey toggle, push-to-talk (Linux)
+  transcribe.py  transcribe WAV + type result (Linux)
+  tray.py        system tray app (Windows)
 ```
 
 ## License

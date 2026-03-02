@@ -124,7 +124,7 @@ def main():
     # Recording modes — lazy import heavy deps
     from stt.audio import continuous_mode, record_until_stop
     from stt.client import save_and_transcribe
-    from stt.typing import type_text
+    from stt.output import type_text
 
     ensure_daemon(args)
 
