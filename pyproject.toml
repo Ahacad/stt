@@ -1,6 +1,6 @@
 [project]
 name = "stt"
-version = "0.1.0"
+version = "0.2.0"
 description = "Speech-to-text using faster-whisper + CUDA"
 readme = "README.md"
 license = "MIT"
