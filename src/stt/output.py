@@ -33,10 +33,9 @@ def type_text(text, window_id=None):
                     check=False,
                 )
             subprocess.run([
-                "xdotool", "windowactivate", "--sync", window_id,
-            ], check=False)
-            subprocess.run([
-                "xdotool", "type", "--delay", "0", "--clearmodifiers", "--", text,
+                "xdotool",
+                "windowactivate", "--sync", window_id,
+                "key", "--clearmodifiers", "ctrl+shift+v",
             ], check=False)
             if cur_id and cur_id != window_id:
                 subprocess.run([
