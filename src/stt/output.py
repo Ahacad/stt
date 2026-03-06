@@ -13,11 +13,27 @@ def type_text(text, window_id=None):
         from pynput.keyboard import Controller
         Controller().type(text)
     else:
-        cmd = ["xdotool", "type", "--clearmodifiers"]
         if window_id:
-            cmd += ["--window", window_id]
-        cmd += ["--", text]
-        subprocess.run(cmd, check=False)
+            # Save current window, focus target, type, restore focus
+            cur = subprocess.run(
+                ["xdotool", "getactivewindow"],
+                capture_output=True, text=True, check=False,
+            )
+            subprocess.run(
+                ["xdotool", "windowactivate", "--sync", window_id], check=False,
+            )
+            subprocess.run(
+                ["xdotool", "type", "--clearmodifiers", "--", text], check=False,
+            )
+            cur_id = cur.stdout.strip()
+            if cur_id and cur_id != window_id:
+                subprocess.run(
+                    ["xdotool", "windowactivate", "--sync", cur_id], check=False,
+                )
+        else:
+            subprocess.run(
+                ["xdotool", "type", "--clearmodifiers", "--", text], check=False,
+            )
 
 
 def copy_to_clipboard(text):
