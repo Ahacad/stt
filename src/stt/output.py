@@ -6,15 +6,35 @@ from stt.compat import WINDOWS
 from stt.config import NOTIFY_ID
 
 
-def type_text(text):
+def type_text(text, window_id=None):
     if not text:
         return
     if WINDOWS:
         from pynput.keyboard import Controller
         Controller().type(text)
     else:
+        cmd = ["xdotool", "type", "--clearmodifiers"]
+        if window_id:
+            cmd += ["--window", window_id]
+        cmd += ["--", text]
+        subprocess.run(cmd, check=False)
+
+
+def copy_to_clipboard(text):
+    if not text:
+        return
+    if WINDOWS:
         subprocess.run(
-            ["xdotool", "type", "--clearmodifiers", "--", text], check=False
+            ["powershell", "-Command", f"Set-Clipboard -Value '{text}'"],
+            check=False,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+    else:
+        subprocess.run(
+            ["xclip", "-selection", "clipboard"],
+            input=text.encode(),
+            check=False,
         )
 
 

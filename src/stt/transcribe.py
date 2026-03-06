@@ -1,41 +1,43 @@
-"""Transcribe a WAV file via stt-daemon and type result into focused window."""
+"""Transcribe a WAV file via stt-daemon and type result into the origin window."""
 
+import argparse
 import os
 import sys
 
 from stt.client import daemon_send
 from stt.log import setup_logging
-from stt.output import notify, type_text
+from stt.output import copy_to_clipboard, notify, type_text
 
 log = setup_logging("stt.transcribe")
 
 
 def main():
-    if len(sys.argv) < 2:
-        print("Usage: stt-transcribe <file.wav>", file=sys.stderr)
-        sys.exit(1)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("wavpath")
+    parser.add_argument("--window", default=None, help="target window ID for xdotool")
+    args = parser.parse_args()
 
-    wavpath = sys.argv[1]
-    if not os.path.exists(wavpath):
-        log.error("file not found: %s", wavpath)
+    if not os.path.exists(args.wavpath):
+        log.error("file not found: %s", args.wavpath)
         sys.exit(1)
 
     try:
-        log.debug("transcribing %s", wavpath)
-        text = daemon_send(f"transcribe {wavpath}").strip()
+        log.debug("transcribing %s", args.wavpath)
+        text = daemon_send(f"transcribe {args.wavpath}").strip()
     except Exception as e:
         log.error("daemon error: %s", e)
         text = ""
     finally:
         try:
-            os.unlink(wavpath)
+            os.unlink(args.wavpath)
         except FileNotFoundError:
             pass
 
     if text and not text.startswith("ERROR:"):
-        type_text(text)
+        copy_to_clipboard(text)
+        type_text(text, window_id=args.window)
         notify("STT", f"Typed: {text[:60]}")
-        log.info("typed: %s", text[:80])
+        log.info("typed (window=%s): %s", args.window, text[:80])
     else:
         notify("STT", "No speech detected")
         log.debug("no speech detected")

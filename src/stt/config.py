@@ -28,6 +28,7 @@ _tmp = temp_dir()
 TOGGLE_LOCK = os.path.join(_tmp, "stt-recording.lock")
 TOGGLE_PIDFILE = os.path.join(_tmp, "stt-recording.pid")
 TOGGLE_WAVPATH = os.path.join(_tmp, "stt-recording-wavpath")
+TOGGLE_WINDOWID = os.path.join(_tmp, "stt-recording-windowid")
 
 # Sounds
 SND_START = None if WINDOWS else "/usr/share/sounds/freedesktop/stereo/message-new-instant.oga"

@@ -16,6 +16,7 @@ from stt.config import (
     TOGGLE_LOCK,
     TOGGLE_PIDFILE,
     TOGGLE_WAVPATH,
+    TOGGLE_WINDOWID,
 )
 from stt.log import setup_logging
 from stt.output import notify, play_sound
@@ -65,11 +66,15 @@ def _stop():
     _remove(TOGGLE_LOCK, TOGGLE_PIDFILE)
 
     wavfile = _read_file(TOGGLE_WAVPATH)
-    _remove(TOGGLE_WAVPATH)
+    window_id = _read_file(TOGGLE_WINDOWID)
+    _remove(TOGGLE_WAVPATH, TOGGLE_WINDOWID)
     if wavfile and os.path.exists(wavfile):
-        log.debug("launching transcribe for %s", wavfile)
+        cmd = ["stt-transcribe", wavfile]
+        if window_id:
+            cmd += ["--window", window_id]
+        log.debug("launching transcribe for %s (window=%s)", wavfile, window_id)
         subprocess.Popen(
-            ["stt-transcribe", wavfile],
+            cmd,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
@@ -93,6 +98,19 @@ def _start():
             stderr=subprocess.DEVNULL,
         )
         time.sleep(3)
+
+    # Capture focused window before any notifications steal focus
+    try:
+        result = subprocess.run(
+            ["xdotool", "getactivewindow"],
+            capture_output=True, text=True, check=True,
+        )
+        window_id = result.stdout.strip()
+        with open(TOGGLE_WINDOWID, "w") as f:
+            f.write(window_id)
+        log.debug("captured origin window=%s", window_id)
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        log.warning("could not capture active window ID")
 
     play_sound(SND_START)
     notify("STT", "Recording...", timeout=0)
