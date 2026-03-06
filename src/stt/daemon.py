@@ -19,7 +19,7 @@ from stt.log import setup_logging
 log = setup_logging("stt.daemon")
 
 
-def handle_client(conn: socket.socket, model: WhisperModel) -> bool:
+def handle_client(conn, model) -> bool:
     """Handle one client connection. Returns False to shut down."""
     try:
         data = conn.recv(4096).decode("utf-8").strip()
