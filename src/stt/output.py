@@ -13,23 +13,22 @@ def type_text(text, window_id=None):
         from pynput.keyboard import Controller
         Controller().type(text)
     elif window_id:
-        # Single xdotool chain: activate target → type → restore.
-        # windowactivate goes through the WM (works with BSPWM/i3/etc).
-        # Using type (XTEST) not --window (XSendEvent) since most apps
-        # reject XSendEvent. Single process = no race condition gaps.
+        # Activate target → type → restore. Two calls because xdotool's
+        # "--" flag makes it consume all remaining args as text to type.
         cur = subprocess.run(
             ["xdotool", "getactivewindow"],
             capture_output=True, text=True, check=False,
         )
         cur_id = cur.stdout.strip()
-        cmd = [
+        subprocess.run([
             "xdotool",
             "windowactivate", "--sync", window_id,
             "type", "--delay", "0", "--clearmodifiers", "--", text,
-        ]
+        ], check=False)
         if cur_id and cur_id != window_id:
-            cmd += ["windowactivate", "--sync", cur_id]
-        subprocess.run(cmd, check=False)
+            subprocess.run([
+                "xdotool", "windowactivate", "--sync", cur_id,
+            ], check=False)
     else:
         subprocess.run(
             ["xdotool", "type", "--clearmodifiers", "--", text], check=False,
