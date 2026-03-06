@@ -12,28 +12,28 @@ def type_text(text, window_id=None):
     if WINDOWS:
         from pynput.keyboard import Controller
         Controller().type(text)
+    elif window_id:
+        # Atomic focus-switch paste via single xdotool chain.
+        # Uses windowfocus (XSetInputFocus) not windowactivate to bypass WM.
+        # Text must already be on clipboard — paste via Shift+Insert.
+        cur = subprocess.run(
+            ["xdotool", "getactivewindow"],
+            capture_output=True, text=True, check=False,
+        )
+        cur_id = cur.stdout.strip()
+        # Single xdotool invocation: focus target → paste → restore focus
+        cmd = [
+            "xdotool",
+            "windowfocus", "--sync", window_id,
+            "key", "--clearmodifiers", "shift+Insert",
+        ]
+        if cur_id and cur_id != window_id:
+            cmd += ["windowfocus", "--sync", cur_id]
+        subprocess.run(cmd, check=False)
     else:
-        if window_id:
-            # Save current window, focus target, type, restore focus
-            cur = subprocess.run(
-                ["xdotool", "getactivewindow"],
-                capture_output=True, text=True, check=False,
-            )
-            subprocess.run(
-                ["xdotool", "windowactivate", "--sync", window_id], check=False,
-            )
-            subprocess.run(
-                ["xdotool", "type", "--clearmodifiers", "--", text], check=False,
-            )
-            cur_id = cur.stdout.strip()
-            if cur_id and cur_id != window_id:
-                subprocess.run(
-                    ["xdotool", "windowactivate", "--sync", cur_id], check=False,
-                )
-        else:
-            subprocess.run(
-                ["xdotool", "type", "--clearmodifiers", "--", text], check=False,
-            )
+        subprocess.run(
+            ["xdotool", "type", "--clearmodifiers", "--", text], check=False,
+        )
 
 
 def copy_to_clipboard(text):
