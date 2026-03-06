@@ -13,22 +13,22 @@ def type_text(text, window_id=None):
         from pynput.keyboard import Controller
         Controller().type(text)
     elif window_id:
-        # Atomic focus-switch paste via single xdotool chain.
-        # Uses windowfocus (XSetInputFocus) not windowactivate to bypass WM.
-        # Text must already be on clipboard — paste via Shift+Insert.
+        # Single xdotool chain: activate target → type → restore.
+        # windowactivate goes through the WM (works with BSPWM/i3/etc).
+        # Using type (XTEST) not --window (XSendEvent) since most apps
+        # reject XSendEvent. Single process = no race condition gaps.
         cur = subprocess.run(
             ["xdotool", "getactivewindow"],
             capture_output=True, text=True, check=False,
         )
         cur_id = cur.stdout.strip()
-        # Single xdotool invocation: focus target → paste → restore focus
         cmd = [
             "xdotool",
-            "windowfocus", "--sync", window_id,
-            "key", "--clearmodifiers", "shift+Insert",
+            "windowactivate", "--sync", window_id,
+            "type", "--delay", "0", "--clearmodifiers", "--", text,
         ]
         if cur_id and cur_id != window_id:
-            cmd += ["windowfocus", "--sync", cur_id]
+            cmd += ["windowactivate", "--sync", cur_id]
         subprocess.run(cmd, check=False)
     else:
         subprocess.run(
