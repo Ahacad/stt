@@ -13,23 +13,40 @@ def type_text(text, window_id=None):
         from pynput.keyboard import Controller
         Controller().type(text)
     elif window_id:
-        # Text must already be on clipboard. Activate target window,
-        # paste with a single ctrl+v keystroke (instant — no time for
-        # focus-follows-pointer to steal focus), then restore.
+        # Text must already be on clipboard. Temporarily disable BSPWM's
+        # focus_follows_pointer so it can't steal focus during the paste,
+        # then activate target → ctrl+v → restore → re-enable.
         cur = subprocess.run(
             ["xdotool", "getactivewindow"],
             capture_output=True, text=True, check=False,
         )
         cur_id = cur.stdout.strip()
-        subprocess.run([
-            "xdotool",
-            "windowactivate", "--sync", window_id,
-            "key", "--clearmodifiers", "ctrl+v",
-        ], check=False)
-        if cur_id and cur_id != window_id:
+        ffp = subprocess.run(
+            ["bspc", "config", "focus_follows_pointer"],
+            capture_output=True, text=True, check=False,
+        )
+        had_ffp = ffp.stdout.strip() == "true"
+        try:
+            if had_ffp:
+                subprocess.run(
+                    ["bspc", "config", "focus_follows_pointer", "false"],
+                    check=False,
+                )
             subprocess.run([
-                "xdotool", "windowactivate", "--sync", cur_id,
+                "xdotool",
+                "windowactivate", "--sync", window_id,
+                "key", "--clearmodifiers", "ctrl+v",
             ], check=False)
+            if cur_id and cur_id != window_id:
+                subprocess.run([
+                    "xdotool", "windowactivate", "--sync", cur_id,
+                ], check=False)
+        finally:
+            if had_ffp:
+                subprocess.run(
+                    ["bspc", "config", "focus_follows_pointer", "true"],
+                    check=False,
+                )
     else:
         subprocess.run(
             ["xdotool", "type", "--clearmodifiers", "--", text], check=False,
