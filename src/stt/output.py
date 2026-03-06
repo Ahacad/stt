@@ -13,8 +13,9 @@ def type_text(text, window_id=None):
         from pynput.keyboard import Controller
         Controller().type(text)
     elif window_id:
-        # Activate target → type → restore. Two calls because xdotool's
-        # "--" flag makes it consume all remaining args as text to type.
+        # Text must already be on clipboard. Activate target window,
+        # paste with a single ctrl+v keystroke (instant — no time for
+        # focus-follows-pointer to steal focus), then restore.
         cur = subprocess.run(
             ["xdotool", "getactivewindow"],
             capture_output=True, text=True, check=False,
@@ -23,7 +24,7 @@ def type_text(text, window_id=None):
         subprocess.run([
             "xdotool",
             "windowactivate", "--sync", window_id,
-            "type", "--delay", "0", "--clearmodifiers", "--", text,
+            "key", "--clearmodifiers", "ctrl+v",
         ], check=False)
         if cur_id and cur_id != window_id:
             subprocess.run([
